@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CleanCut Video Censor</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Video profanity editor</p>
+          <h1>CleanCut</h1>
+        </div>
+        <div class="status-pill" id="statusPill">
+          <span class="status-dot"></span>
+          <span id="statusText">Load a video</span>
+        </div>
+      </header>
+
+      <section class="workspace">
+        <section class="editor-pane" aria-label="Video editor">
+          <div class="upload-zone" id="dropZone">
+            <input id="videoInput" type="file" accept="video/*" />
+            <div class="upload-copy">
+              <i data-lucide="upload-cloud"></i>
+              <div>
+                <strong>Drop a video here</strong>
+                <span>or choose a local MP4, MOV, or WebM file</span>
+              </div>
+            </div>
+            <button class="button primary" id="browseButton" type="button">
+              <i data-lucide="folder-open"></i>
+              Select video
+            </button>
+          </div>
+
+          <div class="video-stage">
+            <video id="video" controls playsinline></video>
+            <canvas id="recordingCanvas" hidden></canvas>
+            <div class="video-empty" id="videoEmpty">
+              <i data-lucide="film"></i>
+              <span>Your preview will appear here</span>
+            </div>
+          </div>
+
+          <div class="transport">
+            <button class="icon-button" id="rewindButton" type="button" title="Back 5 seconds" disabled>
+              <i data-lucide="skip-back"></i>
+            </button>
+            <button class="icon-button" id="playButton" type="button" title="Play or pause" disabled>
+              <i data-lucide="play"></i>
+            </button>
+            <button class="icon-button" id="forwardButton" type="button" title="Forward 5 seconds" disabled>
+              <i data-lucide="skip-forward"></i>
+            </button>
+            <div class="time-readout">
+              <span id="currentTime">00:00.000</span>
+              <span>/</span>
+              <span id="duration">00:00.000</span>
+            </div>
+            <button class="button ghost" id="markButton" type="button" disabled>
+              <i data-lucide="scissors"></i>
+              Mark around playhead
+            </button>
+          </div>
+        </section>
+
+        <aside class="control-pane" aria-label="Censor controls">
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Output behavior</p>
+                <h2>Preview and censor</h2>
+              </div>
+            </div>
+            <p class="field-label">Preview</p>
+            <div class="segmented" role="radiogroup" aria-label="Preview mode">
+              <button class="segment" id="originalPreview" type="button" role="radio" aria-checked="false">
+                <i data-lucide="volume-2"></i>
+                Original
+              </button>
+              <button class="segment active" id="censoredPreview" type="button" role="radio" aria-checked="true">
+                <i data-lucide="shield-check"></i>
+                Censored
+              </button>
+            </div>
+            <p class="panel-note compact">Original preview plays the uploaded video with untouched audio.</p>
+            <p class="field-label spaced">Censor mode</p>
+            <div class="segmented" role="radiogroup" aria-label="Censor mode">
+              <button class="segment active" id="muteMode" type="button" role="radio" aria-checked="true">
+                <i data-lucide="volume-x"></i>
+                Mute
+              </button>
+              <button class="segment" id="beepMode" type="button" role="radio" aria-checked="false">
+                <i data-lucide="radio"></i>
+                Beep
+              </button>
+            </div>
+            <label class="range-field">
+              <span>Beep tone</span>
+              <input id="toneSlider" type="range" min="500" max="1600" value="980" step="20" />
+              <output id="toneValue">980 Hz</output>
+            </label>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Timeline</p>
+                <h2>Censor ranges</h2>
+              </div>
+              <button class="icon-button" id="addRangeButton" type="button" title="Add range" disabled>
+                <i data-lucide="plus"></i>
+              </button>
+            </div>
+            <div class="range-list" id="rangeList"></div>
+            <p class="empty-state" id="rangeEmpty">Add ranges manually or generate them from a timestamped transcript.</p>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Transcript helper</p>
+                <h2>Find words</h2>
+              </div>
+            </div>
+            <label class="text-field">
+              <span>Words to censor</span>
+              <textarea id="curseWords" rows="5">fuck, fucks, fucked, fucking, fuckin, fuckin', fucker, fuckers, fck, f*ck, f**k, f-ing, fuck off, fuck-off, fuck it, fuck this, fuck that, shit, shits, shitty, shitting, sh*t, bullshit, bull shit, bull-shit, bullshitting, damn, damned, dammit, damn it, damnit, goddamn, god damn, god-damn, goddamned, god damned, goddammit, god dammit, goddamnit, god damnit, bitch, bitches, bitching, b!tch, ass, asses, asshole, ass hole, assholes, ass holes, a$$hole, dumbass, dumb ass, bastard, bastards, crap, dick, dicks, dickhead, dick head, piss, pissed, pissing, prick, pricks, slut, sluts, whore, whores, cunt, cunts, motherfucker, mother fucker, motherfucking, mother fucking, mf, cock, cocks, pussy, pussies, twat, twats, arse, arsehole, arse hole, wanker, bollocks, hell</textarea>
+            </label>
+            <label class="text-field">
+              <span>Manual timestamped transcript</span>
+              <textarea id="transcriptInput" rows="7" placeholder="00:12.100 - 00:12.650 damn&#10;00:18.000 --> 00:18.420 shit"></textarea>
+            </label>
+            <div class="button-row">
+              <button class="button secondary" id="parseTranscriptButton" type="button">
+                <i data-lucide="search"></i>
+                Generate ranges
+              </button>
+              <button class="button ghost" id="sampleTranscriptButton" type="button">
+                <i data-lucide="file-text"></i>
+                Sample
+              </button>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Speech to text</p>
+                <h2>Full transcript</h2>
+              </div>
+            </div>
+            <p class="panel-note">Transcribe the uploaded video, then automatically list each matched curse word with its exact word timestamp.</p>
+            <button class="button primary full" id="transcribeButton" type="button" disabled>
+              <i data-lucide="captions"></i>
+              Transcribe video
+            </button>
+            <div class="progress-wrap" id="transcribeProgress" hidden>
+              <progress></progress>
+              <span id="transcribeStatus">Uploading video for transcription</span>
+            </div>
+            <label class="text-field">
+              <span>Transcript text</span>
+              <textarea id="transcriptOutput" class="transcript-output" rows="8" readonly placeholder="The complete transcript will appear here after transcription."></textarea>
+            </label>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Detected profanity</p>
+                <h2>Curse word times</h2>
+              </div>
+              <button class="icon-button" id="addHitsButton" type="button" title="Use detected times as censor ranges" disabled>
+                <i data-lucide="list-plus"></i>
+              </button>
+            </div>
+            <div class="hit-list" id="curseHitList"></div>
+            <p class="empty-state" id="curseHitEmpty">Transcribe a video to see matched words and exact seconds.</p>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Export</p>
+                <h2>Censored copy</h2>
+              </div>
+            </div>
+            <p class="panel-note">Export records the edited preview in real time as a WebM file.</p>
+            <button class="button primary full" id="exportButton" type="button" disabled>
+              <i data-lucide="download"></i>
+              Export WebM
+            </button>
+            <div class="progress-wrap" id="progressWrap" hidden>
+              <progress id="exportProgress" value="0" max="100"></progress>
+              <span id="exportStatus">Preparing export</span>
+            </div>
+            <a class="download-link" id="downloadLink" hidden>Download censored video</a>
+          </section>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>

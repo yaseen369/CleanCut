@@ -1,0 +1,18 @@
+{
+  "name": "cleancut-video-censor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local web app for transcribing videos and muting or beeping profanity.",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node backend/server.js",
+    "check": "node --check backend/server.js && node --check frontend/app.js",
+    "test:matcher": "node tests/matcher.test.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "ffmpeg-static": "^5.2.0",
+    "multer": "^2.2.0"
+  }
+}
